@@ -3,39 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Magic Tiles Pro - Scroll Mode</title>
+    <title>Magic Tiles - Enhanced Version</title>
     <style>
         body {
+            margin: 0;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            background-color: #1a1a1a;
-            font-family: 'Tahoma', sans-serif;
-            user-select: none;
+            height: 100vh;
+            background-color: #f0f0f0;
+            overflow: hidden;
+            font-family: Tahoma, sans-serif;
         }
 
         #game-container {
-            width: 320px;
-            height: 500px;
-            background-color: #000;
-            box-shadow: 0 0 30px rgba(0, 0, 0, 0.9);
-            border-radius: 10px;
-            overflow: hidden; 
-            position: relative;
-        }
-
-        #score-display {
-            position: absolute;
-            top: 10px;
             width: 100%;
-            text-align: center;
-            color: #FFEB3B;
-            font-size: 2.5em;
-            font-weight: bold;
-            z-index: 100; /* بالا نگه داشتن امتیاز */
-            pointer-events: none;
+            max-width: 500px; /* عرض استاندارد برای شبیه سازی موبایل */
+            height: 90vh;
+            position: relative;
+            border: 5px solid #333;
+            background-color: #fff;
+            overflow: hidden; /* ناحیه دید بازی */
         }
 
         #scroll-area {
@@ -44,74 +32,65 @@
             position: absolute;
             top: 0;
             left: 0;
+            /* Transition برای نرمی حرکت، اما باید در gameLoop کنترل شود */
+            transition: transform 0.01s linear; 
         }
 
         .tile-strip {
-            display: flex;
             width: 100%;
-            position: absolute;
-            /* ارتفاع هر نوار باید با ارتفاع بازی همخوانی داشته باشد */
-            height: 125px; 
-            top: 0;
+            height: 125px; /* TILE_HEIGHT ثابت */
+            display: flex;
+            box-sizing: border-box;
         }
 
         .tile {
-            flex-grow: 1;
-            width: 25%;
+            width: 25%; /* عرض هر کاشی 25% */
             height: 100%;
             box-sizing: border-box;
-            background-color: #111; /* کاشی‌های خاموش (سفید/خالی) */
-            transition: background-color 0.1s, box-shadow 0.1s;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            background-color: white; /* کاشی سفید (خطا) */
+            pointer-events: none; /* به طور پیش فرض غیر قابل کلیک */
         }
 
         .black-tile {
-            background-color: #00FF00; /* سبز براق برای کاشی فعال */
-            cursor: pointer;
-            box-shadow: inset 0 -5px 15px rgba(0, 255, 0, 0.7); /* جلوه نئون */
+            background-color: black;
+            pointer-events: auto; /* فقط کاشی سیاه قابل کلیک است */
         }
 
-        .hit {
-            background-color: #FFC107 !important; 
-            box-shadow: none !important;
+        #score-display {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 1.5em;
+            color: #333;
+            z-index: 100;
+            /* تنظیم جهت متن برای RTL */
+            direction: rtl;
+            text-align: right;
         }
-        
-        .missed-tile {
-            background-color: #F44336 !important; 
-            box-shadow: none !important;
-        }
-        
+
         #game-over-screen {
-            /* ... (استایل‌های صفحه پایان بازی بدون تغییر باقی می‌ماند) ... */
+            display: none;
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.95);
+            background-color: rgba(0, 0, 0, 0.85);
             color: white;
-            display: none;
             flex-direction: column;
             justify-content: center;
             align-items: center;
+            z-index: 200;
+            direction: rtl;
             text-align: center;
-            z-index: 1000; /* بسیار بالا برای اطمینان از نمایش */
         }
-
         #game-over-screen button {
-            padding: 15px 30px;
-            margin-top: 30px;
-            font-size: 1.4em;
+            padding: 10px 20px;
+            font-size: 1.2em;
+            margin-top: 20px;
             cursor: pointer;
-            background-color: #00FF00;
-            color: #111;
-            border: none;
-            border-radius: 7px;
-            transition: background-color 0.3s, transform 0.1s;
         }
-        #game-over-screen button:active {
-            transform: scale(0.98);
-        }
-
     </style>
 </head>
 <body>
@@ -119,176 +98,259 @@
     <div id="game-container">
         <div id="score-display">امتیاز: 0</div>
         <div id="scroll-area">
-            <!-- نوارهای کاشی اینجا اضافه می‌شوند -->
+            <!-- کاشی ها اینجا تزریق می شوند -->
         </div>
+
         <div id="game-over-screen">
-            <h1>!بازی تمام شد</h1>
-            <p style="font-size: 1.6em;">امتیاز نهایی شما: <span id="final-score" style="color:#FFC107;">0</span></p>
-            <button onclick="startGame()">شروع مجدد</button>
+            <h2>بازی تمام شد!</h2>
+            <p id="final-score"></p>
+            <button onclick="startGame()">دوباره شروع کنید</button>
         </div>
     </div>
 
+    <!-- استفاده از اولین لینک از لیست شما -->
+    <audio id="game-music" src="https://www.bensound.com/bensound-music/bensound-slowmotion.mp3" preload="auto"></audio>
+
     <script>
+        // ===================================================
+        // تنظیمات اولیه
+        // ===================================================
+        const TILE_HEIGHT = 125; // ارتفاع هر نوار (px)
+        const SCREEN_HEIGHT = document.getElementById('game-container').clientHeight;
+        const SCROLL_SPEED_BASE = 5; // سرعت اولیه
+        const SPEED_INCREASE_RATE = 0.8; // افزایش سرعت هر 10 امتیاز
+        const SPEED_THRESHOLD = 10; // آستانه افزایش سرعت
+
+        let scrollY = 0; // موقعیت فعلی اسکرول (از بالا به پایین)
+        let gameSpeed = SCROLL_SPEED_BASE;
+        let score = 0;
+        let isGameRunning = false;
+        let lastSpeedIncreaseScore = 0;
+        let music;
+        let tilePatternIndex = 0; 
+
         const scrollArea = document.getElementById('scroll-area');
         const scoreDisplay = document.getElementById('score-display');
         const gameOverScreen = document.getElementById('game-over-screen');
-        const finalScoreSpan = document.getElementById('final-score');
-        
-        const TILE_HEIGHT = 125; // ارتفاع هر نوار کاشی
-        const TILE_COUNT = 4;    // تعداد کاشی‌ها در هر نوار
-        
-        let score = 0;
-        let gameLoopInterval;
-        let speed = 5; // سرعت اولیه (پیکسل بر فریم)
-        let scrollY = 0; // موقعیت کلی اسکرول
-        let lastBlackIndex = -1; // شاخص کاشی سیاه در سطر قبلی
 
-        function createTileStrip(positionY) {
+        // الگوهای مسیر (Pattern): 0 برای کاشی سفید، 1 برای کاشی سیاه
+        const patterns = [
+            [0, 0, 1, 0], 
+            [1, 0, 0, 0], 
+            [0, 1, 0, 0], 
+            [0, 0, 0, 1], 
+            [0, 1, 1, 0], 
+        ];
+
+        // ===================================================
+        // توابع کمکی
+        // ===================================================
+
+        function createTileStrip(pattern) {
             const strip = document.createElement('div');
             strip.classList.add('tile-strip');
-            strip.style.top = `${positionY}px`; 
             
-            // انتخاب محل کاشی سیاه به طوری که با سطر قبلی تداخل نداشته باشد
-            let blackTileIndex;
-            do {
-                blackTileIndex = Math.floor(Math.random() * TILE_COUNT);
-            } while (blackTileIndex === lastBlackIndex); // جلوگیری از دو کاشی سیاه پشت سر هم در یک موقعیت
-            
-            lastBlackIndex = blackTileIndex;
-
-            for (let i = 0; i < TILE_COUNT; i++) {
+            pattern.forEach(type => {
                 const tile = document.createElement('div');
                 tile.classList.add('tile');
-                
-                if (i === blackTileIndex) {
+                if (type === 1) {
                     tile.classList.add('black-tile');
-                    tile.onclick = function(event) {
-                        handleTileClick(tile, strip);
-                        event.stopPropagation();
-                    };
                 }
                 strip.appendChild(tile);
-            }
-            
-            scrollArea.appendChild(strip);
+            });
             return strip;
         }
         
-        function initializeGame() {
-            score = 0;
-            speed = 5;
-            scrollY = 0;
-            lastBlackIndex = -1;
-            scoreDisplay.textContent = `امتیاز: ${score}`;
-            gameOverScreen.style.display = 'none';
-            scrollArea.innerHTML = '';
+        function addNewStrip() {
+            const pattern = patterns[tilePatternIndex % patterns.length];
+            const newStrip = createTileStrip(pattern);
             
-            clearInterval(gameLoopInterval);
+            // نوار جدید باید بالای صفحه قرار گیرد
+            newStrip.style.transform = `translateY(${scrollY - TILE_HEIGHT}px)`;
+            scrollArea.prepend(newStrip);
             
-            // پر کردن صفحه با چند نوار کاشی برای شروع
-            for (let i = 0; i < 5; i++) {
-                // هر نوار 125 پیکسل پایین‌تر از نوار قبلی قرار می‌گیرد
-                createTileStrip(i * TILE_HEIGHT);
+            tilePatternIndex++;
+            
+            // حذف نوارهای بسیار قدیمی (بافر 15 نوار)
+            const strips = scrollArea.querySelectorAll('.tile-strip');
+            if (strips.length > 15) { 
+                scrollArea.removeChild(strips[strips.length - 1]);
             }
-            
-            // شروع حلقه اصلی بازی
-            gameLoopInterval = setInterval(gameLoop, 1000 / 60); 
         }
-        
-        function handleTileClick(tile, strip) {
-            if (isGameOver) return;
 
-            if (tile.classList.contains('black-tile')) {
-                score++;
-                scoreDisplay.textContent = `امتیاز: ${score}`;
+        function updateSpeed() {
+            if (score > 0 && score % SPEED_THRESHOLD === 0 && score >= lastSpeedIncreaseScore + SPEED_THRESHOLD) {
+                gameSpeed += SPEED_INCREASE_RATE;
+                lastSpeedIncreaseScore = score;
+                console.log(`سرعت افزایش یافت! سرعت جدید: ${gameSpeed.toFixed(2)}`);
+            }
+        }
+
+        function checkGameEnd() {
+            const strips = scrollArea.querySelectorAll('.tile-strip');
+            let shouldEnd = false;
+            
+            // بررسی اینکه آیا نوار فعال (کاشی سیاه) از پایین صفحه خارج شده است
+            strips.forEach(strip => {
+                // موقعیت Y بالای این نوار
+                const transformValue = strip.style.transform;
+                if (!transformValue) return; 
                 
-                tile.classList.add('hit');
-                tile.classList.remove('black-tile');
-                tile.onclick = null; 
+                const stripTopPosition = parseFloat(transformValue.replace('translateY(', '').replace('px)', ''));
                 
-                // افزایش سرعت
-                if (score % 10 === 0) {
-                    speed += 0.8; 
+                // شرط پایان بازی: اگر پایین نوار (stripTopPosition + TILE_HEIGHT) به صفحه برسد یا از آن عبور کند
+                if (stripTopPosition >= SCREEN_HEIGHT - TILE_HEIGHT / 2) { // شرط کمی ملایم تر برای اطمینان از تشخیص
+                    const blackTile = strip.querySelector('.black-tile');
+                    if (blackTile) {
+                        shouldEnd = true;
+                        console.log("پایان بازی: کاشی سیاه از آستانه عبور کرد.");
+                    }
                 }
+            });
 
-            } 
-            // اگر روی کاشی سفید کلیک شود، در GameLoop تشخیص داده می‌شود.
+            return shouldEnd;
         }
 
-        // منطق کلیک روی فضای خالی برای تشخیص Miss
-        scrollArea.addEventListener('click', function(event) {
-            if (isGameOver) return;
-
-            const clickedElement = event.target;
-            // اگر کلیک روی یک عنصر 'tile' باشد و آن 'black-tile' نباشد، یعنی کلیک اشتباه بوده
-            if (clickedElement.classList.contains('tile') && !clickedElement.classList.contains('black-tile')) {
-                endGame(clickedElement);
-            }
-        });
-
+        // ===================================================
+        // منطق اصلی بازی
+        // ===================================================
 
         function gameLoop() {
-            if (isGameOver) return;
+            if (!isGameRunning) return;
 
-            // 1. حرکت دادن تمام نوارها
-            scrollY += speed;
+            // 1. حرکت دادن اسکرول
+            scrollY += gameSpeed;
             scrollArea.style.transform = `translateY(${scrollY}px)`;
-
-            const strips = document.querySelectorAll('.tile-strip');
-            const screenHeight = scrollArea.clientHeight;
-
-            // 2. مدیریت اسکرول و حذف/اضافه کردن نوارها
             
-            // اگر اولین نوار به اندازه ارتفاع خود از صفحه خارج شد، آن را حذف کن
-            if (strips.length > 0) {
-                 const firstStripY = parseFloat(strips[0].style.top) + scrollY;
-                 if (firstStripY >= TILE_HEIGHT) {
-                     strips[0].remove();
-                     // پس از حذف، باید مقدار scrollY را برگردانیم تا موقعیت مطلق درست شود
-                     scrollY -= TILE_HEIGHT;
-                     scrollArea.style.transform = `translateY(${scrollY}px)`;
-                     
-                     // اضافه کردن نوار جدید در بالای صفحه (positionY = -TILE_HEIGHT)
-                     createTileStrip(-TILE_HEIGHT); 
+            // 2. مدیریت امتیاز و سرعت
+            updateSpeed();
+
+            // 3. تولید محتوای جدید (اگر نوار فعال رد شده باشد)
+            // محاسبه می کنیم چند نوار در این فریم از نقطه شروع اسکرول (0) عبور کرده است.
+            const stripsPassed = Math.floor(scrollY / TILE_HEIGHT);
+            
+            if (stripsPassed > tilePatternIndex) {
+                 // این خط را در صورت نیاز برای بازیابی تنظیم کنید:
+                 // tilePatternIndex = stripsPassed; 
+
+                 // اگر کلیک موفقیت آمیز نبود، باید امتیاز بدهیم و نوار جدید اضافه کنیم:
+                 const lastStrip = scrollArea.querySelector('.tile-strip');
+                 if (lastStrip && !lastStrip.querySelector('.black-tile')) {
+                    // اگر آخرین نوار (بالاترین نوار) کاشی سیاه نداشت، به این معنی است که کاربر نتوانسته است در نوار قبلی کلیک کند.
+                    // اما چون ما شرط کلیک اشتباه را اعمال کردیم، اینجا فقط اگر نوار جدید تولید نشده بود امتیاز را افزایش می دهیم.
+                 }
+                 
+                 // امتیازدهی بر اساس تعداد نوارهای رد شده
+                 if (stripsPassed > tilePatternIndex) {
+                    score += (stripsPassed - tilePatternIndex);
+                    tilePatternIndex = stripsPassed;
+                    scoreDisplay.textContent = `امتیاز: ${score}`;
                  }
             }
 
 
-            // 3. چک کردن پایان بازی (اگر کاشی سیاه رد شود)
-            strips.forEach(strip => {
-                const stripY = parseFloat(strip.style.top) + scrollY;
-                
-                // اگر نوار فعال (که کاشی سیاه در آن قرار دارد) به انتهای صفحه رسید:
-                if (stripY >= screenHeight - TILE_HEIGHT) {
-                    const blackTile = strip.querySelector('.black-tile');
-                    if (blackTile) {
-                        endGame(blackTile);
-                    }
-                }
-            });
+            // 4. بررسی پایان بازی (رد شدن کامل کاشی سیاه از پایین)
+            if (checkGameEnd()) {
+                endGame();
+                return;
+            }
+
+            requestAnimationFrame(gameLoop);
         }
         
-        function endGame(failedTile) {
-            if (isGameOver) return;
-            isGameOver = true;
-            clearInterval(gameLoopInterval);
-            
-            // برجسته کردن کاشی سوخته (قرمز کردن)
-            if (failedTile.classList.contains('black-tile')) {
-                failedTile.classList.add('missed-tile');
-                failedTile.classList.remove('black-tile');
-            } else {
-                // اگر روی کاشی سفید کلیک شده باشد
-                failedTile.classList.add('missed-tile');
+        function endGame() {
+            isGameRunning = false;
+            if (music) {
+                music.pause();
+                music.currentTime = 0;
             }
             
-            // نمایش صفحه پایان بازی
-            finalScoreSpan.textContent = score;
+            const finalScoreElement = document.getElementById('final-score');
+            finalScoreElement.textContent = `امتیاز نهایی شما: ${score}`;
             gameOverScreen.style.display = 'flex';
+
+            // حذف شنونده کلیک برای جلوگیری از اجرای بیشتر
+            scrollArea.removeEventListener('click', handleTileClick, true);
         }
 
-        // شروع بازی برای اولین بار
-        initializeGame();
+        function startGame() {
+            // ریست کردن متغیرها
+            scrollY = 0;
+            gameSpeed = SCROLL_SPEED_BASE;
+            score = 0;
+            tilePatternIndex = 0;
+            lastSpeedIncreaseScore = 0;
+            
+            // پاکسازی محتوای قبلی
+            scrollArea.innerHTML = '';
+            gameOverScreen.style.display = 'none';
+            scoreDisplay.textContent = `امتیاز: 0`;
+            
+            music = document.getElementById('game-music');
+            
+            // پیش بارگذاری چند نوار اولیه (برای شروع بازی)
+            for (let i = 0; i < 5; i++) {
+                addNewStrip();
+            }
+
+            // تنظیم رویداد کلیک برای تشخیص کلیک اشتباه
+            // TRUE در اینجا یعنی Capture Phase، که باعث می شود رویداد زودتر دریافت شود.
+            scrollArea.addEventListener('click', handleTileClick, true); 
+
+            isGameRunning = true;
+            
+            // تلاش برای پخش موسیقی
+            music.currentTime = 0; 
+            music.play().catch(error => {
+                console.warn("پخش خودکار موسیقی مسدود شد. لطفاً روی صفحه کلیک کنید تا بازی شروع شود.", error);
+                // اگر پخش خودکار مسدود شد، نیاز به کلیک کاربر برای شروع است.
+                scrollArea.addEventListener('click', function startMusicClick() {
+                    if (isGameRunning && music.paused) {
+                        music.play();
+                        console.log("موسیقی با کلیک کاربر شروع شد.");
+                        scrollArea.removeEventListener('click', startMusicClick, true);
+                    }
+                }, true);
+            });
+            
+            requestAnimationFrame(gameLoop);
+        }
+        
+        function handleTileClick(event) {
+            if (!isGameRunning) return;
+
+            const clickedElement = event.target;
+            
+            // 1. کلیک روی کاشی سفید یا ناحیه خالی (خطا)
+            if (clickedElement.id === 'scroll-area' || (clickedElement.classList.contains('tile') && !clickedElement.classList.contains('black-tile'))) {
+                console.log("کلیک اشتباه روی کاشی سفید!");
+                endGame(); 
+                return;
+            }
+            
+            // 2. کلیک روی کاشی سیاه (موفقیت)
+            if (clickedElement.classList.contains('black-tile')) {
+                
+                // افزایش امتیاز و تنظیم سرعت (بر اساس کلیک موفق)
+                score++; 
+                scoreDisplay.textContent = `امتیاز: ${score}`;
+                updateSpeed();
+
+                // حذف نوار موفقیت آمیز و تولید نوار جدید برای ادامه
+                const strip = clickedElement.closest('.tile-strip');
+                if (strip) {
+                    strip.remove(); 
+                    
+                    // تولید یک نوار جدید در بالا برای جبران نوار حذف شده و ادامه اسکرول
+                    addNewStrip(); 
+                }
+            }
+        }
+
+        // اجرای بازی پس از بارگذاری کامل صفحه (شروع اولیه)
+        window.onload = () => {
+            startGame(); 
+        };
 
     </script>
 </body>
