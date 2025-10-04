@@ -12,18 +12,18 @@
             align-items: center;
             min-height: 100vh;
             margin: 0;
-            background-color: #333; /* پس زمینه تیره */
-            font-family: 'B Nazanin', Tahoma, sans-serif; /* یک فونت خوانا */
-            user-select: none; /* جلوگیری از انتخاب متن */
+            background-color: #222; /* پس زمینه تیره */
+            font-family: 'Tahoma', 'B Nazanin', sans-serif;
+            user-select: none;
         }
 
         #game-container {
-            width: 320px; /* عرض استاندارد برای موبایل */
+            width: 320px;
             height: 500px;
-            background-color: #111;
-            box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+            background-color: #000;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.7);
             border-radius: 10px;
-            overflow: hidden; /* مهم: برای برش کاشی‌های خارج از محدوده */
+            overflow: hidden; 
             position: relative;
         }
 
@@ -32,96 +32,85 @@
             top: 10px;
             width: 100%;
             text-align: center;
-            color: white;
-            font-size: 2em;
+            color: #FFEB3B; /* رنگ طلایی برای امتیاز */
+            font-size: 2.5em;
             font-weight: bold;
             z-index: 10;
-            pointer-events: none; /* اجازه می‌دهد کلیک از زیر آن رد شود */
+            pointer-events: none;
+            text-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
         }
 
         #game-area {
             width: 100%;
             height: 100%;
             position: relative;
-            background-color: #000;
+            background-color: #111; /* زمینه‌ی بازی */
         }
 
         .row {
             display: flex;
             width: 100%;
-            position: absolute; /* برای حرکت از بالا به پایین */
-            height: 125px; /* ارتفاع کاشی */
+            position: absolute;
+            height: 125px; 
         }
 
         .tile {
             flex-grow: 1;
             width: 25%;
             height: 100%;
-            border: 1px solid #333; /* خط جدا کننده کاشی‌ها */
+            /* حذف مرزهای داخلی برای حس پیوستگی */
+            border: 0.5px solid #222; 
             box-sizing: border-box;
-            background-color: #222; /* رنگ کاشی‌های غیرفعال */
-            transition: background-color 0.05s ease; /* انیمیشن سریع برای کلیک */
+            background-color: #111; /* کاشی‌های خاموش، بسیار تیره */
         }
 
-        /* کاشی اصلی که باید زده شود */
         .black-tile {
-            background-color: #4CAF50; /* رنگ جذاب برای کاشی فعال (سبز) */
+            background-color: #4CAF50; /* سبز روشن و جذاب */
             cursor: pointer;
-            box-shadow: inset 0 -5px 0 #388E3C; /* سایه داخلی برای عمق دادن */
-            border-radius: 0 0 5px 5px; /* گوشه‌های گرد پایین */
-            border-color: #111;
+            box-shadow: inset 0 -3px 0 #388E3C; /* عمق کمتر */
         }
 
-        /* اثر کلیک روی کاشی */
-        .black-tile:active, .hit {
-            background-color: #FFC107 !important; /* رنگ زرد یا طلایی هنگام کلیک */
-            box-shadow: none;
+        /* اثر کلیک */
+        .hit {
+            background-color: #FFC107 !important; 
+            box-shadow: none !important;
         }
         
-        /* کاشی که اشتباه زده شده یا رد شده */
         .missed-tile {
-            background-color: #F44336 !important; /* رنگ قرمز برای کاشی سوخته */
+            background-color: #F44336 !important; /* قرمز */
         }
 
+        /* صفحه پایان بازی */
         #game-over-screen {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
+            background-color: rgba(0, 0, 0, 0.9);
             color: white;
-            display: none; /* پنهان در ابتدا */
+            display: none;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             text-align: center;
             z-index: 100;
-            backdrop-filter: blur(5px);
+        }
+
+        #game-over-screen h1 {
+            color: #F44336;
         }
 
         #game-over-screen button {
-            padding: 10px 20px;
-            margin-top: 20px;
-            font-size: 1.2em;
+            padding: 12px 25px;
+            margin-top: 30px;
+            font-size: 1.3em;
             cursor: pointer;
             background-color: #4CAF50;
             color: white;
             border: none;
-            border-radius: 5px;
+            border-radius: 7px;
             transition: background-color 0.3s;
-        }
-        
-        #game-over-screen button:hover {
-            background-color: #388E3C;
-        }
-
-        /* برای پشتیبانی از زبان فارسی در مرورگرهایی که فونت B Nazanin ندارند */
-        @font-face {
-            font-family: 'B Nazanin';
-            src: url('fonts/BNazanin.ttf') format('truetype');
-            /* اگر می‌خواهید کاملاً مستقل از فونت سیستم باشید، باید فایل فونت را هم آپلود کنید.
-               اما معمولاً در سیستم‌های فارسی زبان این فونت موجود است. */
         }
 
     </style>
@@ -131,55 +120,49 @@
     <div id="game-container">
         <div id="score-display">امتیاز: 0</div>
         <div id="game-area">
-            <!-- کاشی‌ها با جاوااسکریپت در اینجا اضافه خواهند شد -->
+            <!-- کاشی‌ها اینجا اضافه می‌شوند -->
         </div>
         <div id="game-over-screen">
-            <h1>بازی تمام شد!</h1>
-            <p>امتیاز نهایی شما: <span id="final-score">0</span></p>
+            <h1>!بازی تمام شد</h1>
+            <p style="font-size: 1.5em;">امتیاز نهایی شما: <span id="final-score" style="color:#FFC107;">0</span></p>
             <button onclick="startGame()">شروع مجدد</button>
         </div>
     </div>
 
     <script>
-        // متغیرهای اصلی بازی
         const gameArea = document.getElementById('game-area');
         const scoreDisplay = document.getElementById('score-display');
         const gameOverScreen = document.getElementById('game-over-screen');
         const finalScoreSpan = document.getElementById('final-score');
         
-        const tileHeight = 125; // ارتفاع هر کاشی بر حسب پیکسل
+        const tileHeight = 125;
         let score = 0;
         let gameLoopInterval;
-        let speed = 2; // سرعت اولیه: 2 پیکسل در فریم
-        let tileGenerationRate = 125; // فاصله افقی بین کاشی‌ها (بر حسب ارتفاع کاشی)
-        let lastTileY = -tileGenerationRate; // موقعیت Y آخرین کاشی ساخته شده
+        let speed = 5; // سرعت اولیه افزایش یافت
+        let tileGenerationRate = 125; 
+        let lastTileY = -tileGenerationRate; 
         let isGameOver = false;
 
-        // تابع برای شروع/ریست بازی
         function startGame() {
-            // ریست متغیرها
             score = 0;
-            speed = 2;
+            speed = 5;
             isGameOver = false;
             lastTileY = -tileGenerationRate;
             scoreDisplay.textContent = `امتیاز: ${score}`;
             gameOverScreen.style.display = 'none';
-
-            // پاک کردن کاشی‌های قبلی
             gameArea.innerHTML = '';
             
-            // شروع چرخه بازی
             clearInterval(gameLoopInterval);
-            gameLoopInterval = setInterval(gameLoop, 1000 / 60); // 60 فریم در ثانیه
+            gameLoopInterval = setInterval(gameLoop, 1000 / 60); 
         }
 
         // تابع ایجاد یک سطر کاشی جدید
         function createTileRow() {
             const row = document.createElement('div');
             row.classList.add('row');
-            row.style.top = `${lastTileY}px`; // قرار دادن بالاتر از دید
+            // کاشی‌ها باید از بالای صفحه، کمی پنهان شروع شوند
+            row.style.top = `${lastTileY}px`; 
             
-            // تعیین ستونی که کاشی سیاه در آن قرار می‌گیرد (0 تا 3)
             const blackTileIndex = Math.floor(Math.random() * 4); 
 
             for (let i = 0; i < 4; i++) {
@@ -187,43 +170,62 @@
                 tile.classList.add('tile');
                 
                 if (i === blackTileIndex) {
-                    // این کاشی قابل کلیک است
                     tile.classList.add('black-tile');
-                    tile.onclick = function() {
-                        handleTileClick(tile);
+                    // این تابع به ردیف (Row) وصل است
+                    tile.onclick = function(event) {
+                        handleTileClick(tile, row);
+                        // جلوگیری از انتشار کلیک به gameArea
+                        event.stopPropagation();
                     };
                 }
                 row.appendChild(tile);
             }
 
             gameArea.appendChild(row);
-            lastTileY -= tileHeight; // موقعیت Y کاشی بعدی
+            // موقعیت Y کاشی بعدی، در واقع بالای کاشی قبلی است
+            lastTileY = lastTileY - tileHeight; 
         }
 
         // منطق کلیک روی کاشی
-        function handleTileClick(tile) {
+        function handleTileClick(tile, row) {
             if (isGameOver) return;
 
-            // اگر کاشی سیاه باشد (درست زده شده)
             if (tile.classList.contains('black-tile')) {
                 score++;
                 scoreDisplay.textContent = `امتیاز: ${score}`;
                 
-                // تغییر رنگ سریع برای بازخورد بصری
+                // تغییر رنگ سریع
                 tile.classList.add('hit');
+                // بلافاصله کاشی را غیر قابل کلیک کن
                 tile.classList.remove('black-tile');
-                tile.onclick = null; // جلوگیری از کلیک مجدد
+                tile.onclick = null; 
                 
-                // افزایش سرعت به تدریج
+                // === منطق افزایش سرعت ===
+                // سرعت پس از هر 10 امتیاز 0.8 پیکسل افزایش می‌یابد
                 if (score % 10 === 0) {
-                    speed += 0.5; // افزایش سرعت هر 10 امتیاز
+                    speed += 0.8; 
                 }
 
             } else {
-                // اگر کاشی سفید/اشتباه زده شد
+                // کلیک اشتباه روی کاشی سفید (End Game)
                 endGame(tile);
             }
         }
+
+        // افزودن کلیک Listener برای تشخیص کلیک روی منطقه بازی
+        // این کار برای تشخیص کلیک روی کاشی‌های رد شده (Missed Tiles) ضروری است
+        gameArea.addEventListener('click', function(event) {
+            // چک می‌کنیم آیا کلیک روی یک کاشی اتفاق افتاده است
+            if (event.target.classList.contains('tile')) {
+                // اگر کاشی سیاه نباشد و بازی تمام نشده باشد، به معنی کلیک اشتباه روی فضای سفید است
+                if (!event.target.classList.contains('black-tile') && !isGameOver) {
+                    // در این حالت نیازی به برجسته کردن کاشی نیست چون کاشی فعال نبوده
+                    // می‌توانیم یک کاشی فرضی را برای EndGame بفرستیم
+                    endGame(event.target); 
+                }
+            }
+        });
+
 
         // تابع اصلی چرخه بازی
         function gameLoop() {
@@ -233,8 +235,9 @@
             const rows = document.querySelectorAll('.row');
             const gameAreaHeight = gameArea.clientHeight;
 
-            // اگر موقعیت آخرین کاشی ساخته شده، در شرف ورود به صفحه است، کاشی جدید بساز
-            if (rows.length === 0 || parseFloat(rows[0].style.top) > -tileHeight) {
+            // اگر بالای اولین کاشی در محدوده بالای صفحه (0) باشد، کاشی جدید بساز.
+            // این ensures می‌کند که صفحه همیشه پر از کاشی است.
+            if (rows.length === 0 || parseFloat(rows[rows.length - 1].style.top) > -tileHeight) {
                 createTileRow();
             }
 
@@ -245,14 +248,15 @@
                 
                 row.style.top = `${newY}px`;
 
-                // اگر کاشی سیاه به پایین صفحه رسید (رد شد)
+                // اگر کاشی سیاه به خط پایان (پایین صفحه) رسید:
                 const blackTile = row.querySelector('.black-tile');
-                if (blackTile && newY > gameAreaHeight) {
+                if (blackTile && newY >= gameAreaHeight - tileHeight) {
+                    // کاشی فعال رد شده است
                     endGame(blackTile);
-                    return; // خروج از حلقه forEach
+                    return; 
                 }
                 
-                // حذف کاشی‌هایی که کاملاً از پایین صفحه خارج شدند
+                // حذف کاشی‌هایی که کاملاً از پایین خارج شدند
                 if (newY > gameAreaHeight + tileHeight) {
                     row.remove();
                 }
@@ -265,9 +269,16 @@
             isGameOver = true;
             clearInterval(gameLoopInterval);
             
-            // برجسته کردن کاشی سوخته
-            failedTile.classList.add('missed-tile');
-
+            // برجسته کردن کاشی سوخته (قرمز کردن)
+            if (failedTile.classList.contains('black-tile')) {
+                // اگر کاشی سیاه رد شده باشد
+                failedTile.classList.add('missed-tile');
+                failedTile.classList.remove('black-tile');
+            } else {
+                // اگر روی کاشی سفید کلیک شده باشد، همان کاشی را قرمز کن
+                failedTile.classList.add('missed-tile');
+            }
+            
             // نمایش صفحه پایان بازی
             finalScoreSpan.textContent = score;
             gameOverScreen.style.display = 'flex';
