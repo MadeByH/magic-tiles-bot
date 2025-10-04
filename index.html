@@ -43,7 +43,6 @@ body {
     width: 25%;
     height: 125px;
     background-color: #4CAF50;
-    left: 0;
     border-radius: 0 0 6px 6px;
     box-shadow: inset 0 -6px 0 #2e7d32;
     cursor: pointer;
@@ -69,7 +68,7 @@ body {
     color: white;
     backdrop-filter: blur(5px);
 }
-#game-over-screen button {
+#game-over-screen button, #start-button {
     background-color: #4CAF50;
     border: none;
     color: white;
@@ -77,6 +76,25 @@ body {
     border-radius: 8px;
     padding: 10px 25px;
     cursor: pointer;
+    transition: background-color 0.3s;
+}
+#game-over-screen button:hover, #start-button:hover {
+    background-color: #2e7d32;
+}
+#start-screen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.9);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    z-index: 50;
 }
 </style>
 </head>
@@ -85,6 +103,12 @@ body {
 <div id="game-container">
     <div id="score-display">امتیاز: 0</div>
     <div id="game-area"></div>
+
+    <div id="start-screen">
+        <h1>🎹 Magic Tiles Pro+</h1>
+        <button id="start-button">شروع بازی 🎵</button>
+    </div>
+
     <div id="game-over-screen">
         <h1>🎮 بازی تمام شد</h1>
         <p>امتیاز نهایی: <span id="final-score">0</span></p>
@@ -104,61 +128,52 @@ const MUSIC_LINKS = [
 
 const gameArea = document.getElementById("game-area");
 const scoreDisplay = document.getElementById("score-display");
+const startScreen = document.getElementById("start-screen");
 const gameOverScreen = document.getElementById("game-over-screen");
 const finalScore = document.getElementById("final-score");
 const audio = document.getElementById("bg-music");
+const startButton = document.getElementById("start-button");
 
 let score = 0;
 let isGameOver = false;
 let gameLoopInterval;
-let currentBPM = 100; // ضرب تقریبی پیش‌فرض
+let tileMakerInterval;
 let tileFallSpeed = 3;
-const tileHeight = 125;
 
 // 🎵 انتخاب موزیک تصادفی
 function chooseRandomMusic() {
     return MUSIC_LINKS[Math.floor(Math.random() * MUSIC_LINKS.length)];
 }
 
-// 🔊 راه‌اندازی پخش موسیقی و تشخیص ریتم (با Web Audio API)
-async function setupMusicAndRhythm() {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const source = ctx.createMediaElementSource(audio);
-    const analyser = ctx.createAnalyser();
-    source.connect(analyser);
-    analyser.connect(ctx.destination);
-    analyser.fftSize = 256;
-    const dataArray = new Uint8Array(analyser.frequencyBinCount);
-
-    // آنالیز صدا برای تشخیص شدت ضرب‌ها
-    setInterval(() => {
-        analyser.getByteFrequencyData(dataArray);
-        const avg = dataArray.reduce((a, b) => a + b) / dataArray.length;
-        if (avg > 180) createTile(); // هر بار ضرب بالا می‌رود، کاشی بساز
-    }, 100);
-}
-
 // 🎮 شروع بازی
 function startGame() {
     clearInterval(gameLoopInterval);
+    clearInterval(tileMakerInterval);
     gameArea.innerHTML = "";
     score = 0;
     isGameOver = false;
     scoreDisplay.textContent = "امتیاز: 0";
     gameOverScreen.style.display = "none";
+    startScreen.style.display = "none";
 
-    // شروع موسیقی
+    // شروع موسیقی بعد از کلیک کاربر
     const musicSrc = chooseRandomMusic();
     audio.src = musicSrc;
     audio.play();
 
-    setupMusicAndRhythm();
+    // ساخت کاشی‌ها با ریتم حدودی (هر 600 میلی‌ثانیه)
+    tileMakerInterval = setInterval(createTile, 600);
 
+    // وقتی موسیقی تموم شد → پایان بازی
+    audio.onended = () => endGame();
+
+    // حرکت کاشی‌ها
     gameLoopInterval = setInterval(gameLoop, 1000 / 60);
 }
 
-// 🎵 ایجاد کاشی در موقعیت تصادفی (فقط کاشی سبز)
+// 🎵 ایجاد کاشی سبز در موقعیت تصادفی
 function createTile() {
+    if (isGameOver) return;
     const tile = document.createElement("div");
     tile.classList.add("tile");
     const column = Math.floor(Math.random() * 4);
@@ -177,7 +192,7 @@ function createTile() {
     gameArea.appendChild(tile);
 }
 
-// 🔄 حلقه‌ی اصلی بازی
+// 🔄 حلقه‌ی اصلی بازی (حرکت کاشی‌ها)
 function gameLoop() {
     if (isGameOver) return;
 
@@ -199,14 +214,17 @@ function endGame(tile) {
     if (isGameOver) return;
     isGameOver = true;
     clearInterval(gameLoopInterval);
+    clearInterval(tileMakerInterval);
     audio.pause();
     if (tile) tile.classList.add("missed");
     finalScore.textContent = score;
     gameOverScreen.style.display = "flex";
 }
 
-// ▶ شروع خودکار در لود اولیه
-startGame();
+// 🟢 کلیک روی دکمه شروع
+startButton.onclick = () => {
+    startGame();
+};
 </script>
 </body>
 </html>
