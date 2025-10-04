@@ -1,357 +1,212 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Magic Tiles - Enhanced Version</title>
-    <style>
-        body {
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: #f0f0f0;
-            overflow: hidden;
-            font-family: Tahoma, sans-serif;
-        }
-
-        #game-container {
-            width: 100%;
-            max-width: 500px; /* عرض استاندارد برای شبیه سازی موبایل */
-            height: 90vh;
-            position: relative;
-            border: 5px solid #333;
-            background-color: #fff;
-            overflow: hidden; /* ناحیه دید بازی */
-        }
-
-        #scroll-area {
-            width: 100%;
-            height: 100%;
-            position: absolute;
-            top: 0;
-            left: 0;
-            /* Transition برای نرمی حرکت، اما باید در gameLoop کنترل شود */
-            transition: transform 0.01s linear; 
-        }
-
-        .tile-strip {
-            width: 100%;
-            height: 125px; /* TILE_HEIGHT ثابت */
-            display: flex;
-            box-sizing: border-box;
-        }
-
-        .tile {
-            width: 25%; /* عرض هر کاشی 25% */
-            height: 100%;
-            box-sizing: border-box;
-            border: 1px solid rgba(0, 0, 0, 0.1);
-            background-color: white; /* کاشی سفید (خطا) */
-            pointer-events: none; /* به طور پیش فرض غیر قابل کلیک */
-        }
-
-        .black-tile {
-            background-color: black;
-            pointer-events: auto; /* فقط کاشی سیاه قابل کلیک است */
-        }
-
-        #score-display {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            font-size: 1.5em;
-            color: #333;
-            z-index: 100;
-            /* تنظیم جهت متن برای RTL */
-            direction: rtl;
-            text-align: right;
-        }
-
-        #game-over-screen {
-            display: none;
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.85);
-            color: white;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 200;
-            direction: rtl;
-            text-align: center;
-        }
-        #game-over-screen button {
-            padding: 10px 20px;
-            font-size: 1.2em;
-            margin-top: 20px;
-            cursor: pointer;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎵 Magic Tiles Pro+</title>
+<style>
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    background-color: #111;
+    font-family: "B Nazanin", Tahoma, sans-serif;
+    user-select: none;
+}
+#game-container {
+    width: 320px;
+    height: 500px;
+    background-color: #000;
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 0 40px rgba(0, 255, 100, 0.3);
+}
+#score-display {
+    position: absolute;
+    top: 10px;
+    width: 100%;
+    text-align: center;
+    color: #fff;
+    font-size: 1.8em;
+    z-index: 10;
+}
+#game-area {
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+.tile {
+    position: absolute;
+    width: 25%;
+    height: 125px;
+    background-color: #4CAF50;
+    left: 0;
+    border-radius: 0 0 6px 6px;
+    box-shadow: inset 0 -6px 0 #2e7d32;
+    cursor: pointer;
+    transition: background-color 0.05s;
+}
+.tile.hit {
+    background-color: #FFD54F !important;
+}
+.tile.missed {
+    background-color: #E53935 !important;
+}
+#game-over-screen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    backdrop-filter: blur(5px);
+}
+#game-over-screen button {
+    background-color: #4CAF50;
+    border: none;
+    color: white;
+    font-size: 1.2em;
+    border-radius: 8px;
+    padding: 10px 25px;
+    cursor: pointer;
+}
+</style>
 </head>
 <body>
 
-    <div id="game-container">
-        <div id="score-display">امتیاز: 0</div>
-        <div id="scroll-area">
-            <!-- کاشی ها اینجا تزریق می شوند -->
-        </div>
-
-        <div id="game-over-screen">
-            <h2>بازی تمام شد!</h2>
-            <p id="final-score"></p>
-            <button onclick="startGame()">دوباره شروع کنید</button>
-        </div>
+<div id="game-container">
+    <div id="score-display">امتیاز: 0</div>
+    <div id="game-area"></div>
+    <div id="game-over-screen">
+        <h1>🎮 بازی تمام شد</h1>
+        <p>امتیاز نهایی: <span id="final-score">0</span></p>
+        <button onclick="startGame()">شروع مجدد</button>
     </div>
+</div>
 
-    <!-- استفاده از اولین لینک از لیست شما -->
-    <audio id="game-music" src="https://www.bensound.com/bensound-music/bensound-slowmotion.mp3" preload="auto"></audio>
+<audio id="bg-music" preload="auto"></audio>
 
-    <script>
-        // ===================================================
-        // تنظیمات اولیه
-        // ===================================================
-        const TILE_HEIGHT = 125; // ارتفاع هر نوار (px)
-        const SCREEN_HEIGHT = document.getElementById('game-container').clientHeight;
-        const SCROLL_SPEED_BASE = 5; // سرعت اولیه
-        const SPEED_INCREASE_RATE = 0.8; // افزایش سرعت هر 10 امتیاز
-        const SPEED_THRESHOLD = 10; // آستانه افزایش سرعت
+<script>
+// 🎵 لیست موزیک‌ها
+const MUSIC_LINKS = [
+    "https://www.bensound.com/bensound-music/bensound-tomorrow.mp3",
+    "https://www.bensound.com/bensound-music/bensound-creativeminds.mp3",
+    "https://www.bensound.com/bensound-music/bensound-dreams.mp3"
+];
 
-        let scrollY = 0; // موقعیت فعلی اسکرول (از بالا به پایین)
-        let gameSpeed = SCROLL_SPEED_BASE;
-        let score = 0;
-        let isGameRunning = false;
-        let lastSpeedIncreaseScore = 0;
-        let music;
-        let tilePatternIndex = 0; 
+const gameArea = document.getElementById("game-area");
+const scoreDisplay = document.getElementById("score-display");
+const gameOverScreen = document.getElementById("game-over-screen");
+const finalScore = document.getElementById("final-score");
+const audio = document.getElementById("bg-music");
 
-        const scrollArea = document.getElementById('scroll-area');
-        const scoreDisplay = document.getElementById('score-display');
-        const gameOverScreen = document.getElementById('game-over-screen');
+let score = 0;
+let isGameOver = false;
+let gameLoopInterval;
+let currentBPM = 100; // ضرب تقریبی پیش‌فرض
+let tileFallSpeed = 3;
+const tileHeight = 125;
 
-        // الگوهای مسیر (Pattern): 0 برای کاشی سفید، 1 برای کاشی سیاه
-        const patterns = [
-            [0, 0, 1, 0], 
-            [1, 0, 0, 0], 
-            [0, 1, 0, 0], 
-            [0, 0, 0, 1], 
-            [0, 1, 1, 0], 
-        ];
+// 🎵 انتخاب موزیک تصادفی
+function chooseRandomMusic() {
+    return MUSIC_LINKS[Math.floor(Math.random() * MUSIC_LINKS.length)];
+}
 
-        // ===================================================
-        // توابع کمکی
-        // ===================================================
+// 🔊 راه‌اندازی پخش موسیقی و تشخیص ریتم (با Web Audio API)
+async function setupMusicAndRhythm() {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const source = ctx.createMediaElementSource(audio);
+    const analyser = ctx.createAnalyser();
+    source.connect(analyser);
+    analyser.connect(ctx.destination);
+    analyser.fftSize = 256;
+    const dataArray = new Uint8Array(analyser.frequencyBinCount);
 
-        function createTileStrip(pattern) {
-            const strip = document.createElement('div');
-            strip.classList.add('tile-strip');
-            
-            pattern.forEach(type => {
-                const tile = document.createElement('div');
-                tile.classList.add('tile');
-                if (type === 1) {
-                    tile.classList.add('black-tile');
-                }
-                strip.appendChild(tile);
-            });
-            return strip;
+    // آنالیز صدا برای تشخیص شدت ضرب‌ها
+    setInterval(() => {
+        analyser.getByteFrequencyData(dataArray);
+        const avg = dataArray.reduce((a, b) => a + b) / dataArray.length;
+        if (avg > 180) createTile(); // هر بار ضرب بالا می‌رود، کاشی بساز
+    }, 100);
+}
+
+// 🎮 شروع بازی
+function startGame() {
+    clearInterval(gameLoopInterval);
+    gameArea.innerHTML = "";
+    score = 0;
+    isGameOver = false;
+    scoreDisplay.textContent = "امتیاز: 0";
+    gameOverScreen.style.display = "none";
+
+    // شروع موسیقی
+    const musicSrc = chooseRandomMusic();
+    audio.src = musicSrc;
+    audio.play();
+
+    setupMusicAndRhythm();
+
+    gameLoopInterval = setInterval(gameLoop, 1000 / 60);
+}
+
+// 🎵 ایجاد کاشی در موقعیت تصادفی (فقط کاشی سبز)
+function createTile() {
+    const tile = document.createElement("div");
+    tile.classList.add("tile");
+    const column = Math.floor(Math.random() * 4);
+    tile.style.left = `${column * 25}%`;
+    tile.style.top = `-125px`;
+
+    tile.onclick = () => {
+        if (isGameOver) return;
+        tile.classList.add("hit");
+        score++;
+        scoreDisplay.textContent = `امتیاز: ${score}`;
+        tile.onclick = null;
+        setTimeout(() => tile.remove(), 100);
+    };
+
+    gameArea.appendChild(tile);
+}
+
+// 🔄 حلقه‌ی اصلی بازی
+function gameLoop() {
+    if (isGameOver) return;
+
+    const tiles = document.querySelectorAll(".tile");
+    tiles.forEach(tile => {
+        const currentY = parseFloat(tile.style.top || 0);
+        const newY = currentY + tileFallSpeed;
+        tile.style.top = `${newY}px`;
+
+        // اگر کاشی از پایین گذشت و زده نشده بود
+        if (newY > gameArea.clientHeight) {
+            endGame(tile);
         }
-        
-        function addNewStrip() {
-            const pattern = patterns[tilePatternIndex % patterns.length];
-            const newStrip = createTileStrip(pattern);
-            
-            // نوار جدید باید بالای صفحه قرار گیرد
-            newStrip.style.transform = `translateY(${scrollY - TILE_HEIGHT}px)`;
-            scrollArea.prepend(newStrip);
-            
-            tilePatternIndex++;
-            
-            // حذف نوارهای بسیار قدیمی (بافر 15 نوار)
-            const strips = scrollArea.querySelectorAll('.tile-strip');
-            if (strips.length > 15) { 
-                scrollArea.removeChild(strips[strips.length - 1]);
-            }
-        }
+    });
+}
 
-        function updateSpeed() {
-            if (score > 0 && score % SPEED_THRESHOLD === 0 && score >= lastSpeedIncreaseScore + SPEED_THRESHOLD) {
-                gameSpeed += SPEED_INCREASE_RATE;
-                lastSpeedIncreaseScore = score;
-                console.log(`سرعت افزایش یافت! سرعت جدید: ${gameSpeed.toFixed(2)}`);
-            }
-        }
+// ❌ پایان بازی
+function endGame(tile) {
+    if (isGameOver) return;
+    isGameOver = true;
+    clearInterval(gameLoopInterval);
+    audio.pause();
+    if (tile) tile.classList.add("missed");
+    finalScore.textContent = score;
+    gameOverScreen.style.display = "flex";
+}
 
-        function checkGameEnd() {
-            const strips = scrollArea.querySelectorAll('.tile-strip');
-            let shouldEnd = false;
-            
-            // بررسی اینکه آیا نوار فعال (کاشی سیاه) از پایین صفحه خارج شده است
-            strips.forEach(strip => {
-                // موقعیت Y بالای این نوار
-                const transformValue = strip.style.transform;
-                if (!transformValue) return; 
-                
-                const stripTopPosition = parseFloat(transformValue.replace('translateY(', '').replace('px)', ''));
-                
-                // شرط پایان بازی: اگر پایین نوار (stripTopPosition + TILE_HEIGHT) به صفحه برسد یا از آن عبور کند
-                if (stripTopPosition >= SCREEN_HEIGHT - TILE_HEIGHT / 2) { // شرط کمی ملایم تر برای اطمینان از تشخیص
-                    const blackTile = strip.querySelector('.black-tile');
-                    if (blackTile) {
-                        shouldEnd = true;
-                        console.log("پایان بازی: کاشی سیاه از آستانه عبور کرد.");
-                    }
-                }
-            });
-
-            return shouldEnd;
-        }
-
-        // ===================================================
-        // منطق اصلی بازی
-        // ===================================================
-
-        function gameLoop() {
-            if (!isGameRunning) return;
-
-            // 1. حرکت دادن اسکرول
-            scrollY += gameSpeed;
-            scrollArea.style.transform = `translateY(${scrollY}px)`;
-            
-            // 2. مدیریت امتیاز و سرعت
-            updateSpeed();
-
-            // 3. تولید محتوای جدید (اگر نوار فعال رد شده باشد)
-            // محاسبه می کنیم چند نوار در این فریم از نقطه شروع اسکرول (0) عبور کرده است.
-            const stripsPassed = Math.floor(scrollY / TILE_HEIGHT);
-            
-            if (stripsPassed > tilePatternIndex) {
-                 // این خط را در صورت نیاز برای بازیابی تنظیم کنید:
-                 // tilePatternIndex = stripsPassed; 
-
-                 // اگر کلیک موفقیت آمیز نبود، باید امتیاز بدهیم و نوار جدید اضافه کنیم:
-                 const lastStrip = scrollArea.querySelector('.tile-strip');
-                 if (lastStrip && !lastStrip.querySelector('.black-tile')) {
-                    // اگر آخرین نوار (بالاترین نوار) کاشی سیاه نداشت، به این معنی است که کاربر نتوانسته است در نوار قبلی کلیک کند.
-                    // اما چون ما شرط کلیک اشتباه را اعمال کردیم، اینجا فقط اگر نوار جدید تولید نشده بود امتیاز را افزایش می دهیم.
-                 }
-                 
-                 // امتیازدهی بر اساس تعداد نوارهای رد شده
-                 if (stripsPassed > tilePatternIndex) {
-                    score += (stripsPassed - tilePatternIndex);
-                    tilePatternIndex = stripsPassed;
-                    scoreDisplay.textContent = `امتیاز: ${score}`;
-                 }
-            }
-
-
-            // 4. بررسی پایان بازی (رد شدن کامل کاشی سیاه از پایین)
-            if (checkGameEnd()) {
-                endGame();
-                return;
-            }
-
-            requestAnimationFrame(gameLoop);
-        }
-        
-        function endGame() {
-            isGameRunning = false;
-            if (music) {
-                music.pause();
-                music.currentTime = 0;
-            }
-            
-            const finalScoreElement = document.getElementById('final-score');
-            finalScoreElement.textContent = `امتیاز نهایی شما: ${score}`;
-            gameOverScreen.style.display = 'flex';
-
-            // حذف شنونده کلیک برای جلوگیری از اجرای بیشتر
-            scrollArea.removeEventListener('click', handleTileClick, true);
-        }
-
-        function startGame() {
-            // ریست کردن متغیرها
-            scrollY = 0;
-            gameSpeed = SCROLL_SPEED_BASE;
-            score = 0;
-            tilePatternIndex = 0;
-            lastSpeedIncreaseScore = 0;
-            
-            // پاکسازی محتوای قبلی
-            scrollArea.innerHTML = '';
-            gameOverScreen.style.display = 'none';
-            scoreDisplay.textContent = `امتیاز: 0`;
-            
-            music = document.getElementById('game-music');
-            
-            // پیش بارگذاری چند نوار اولیه (برای شروع بازی)
-            for (let i = 0; i < 5; i++) {
-                addNewStrip();
-            }
-
-            // تنظیم رویداد کلیک برای تشخیص کلیک اشتباه
-            // TRUE در اینجا یعنی Capture Phase، که باعث می شود رویداد زودتر دریافت شود.
-            scrollArea.addEventListener('click', handleTileClick, true); 
-
-            isGameRunning = true;
-            
-            // تلاش برای پخش موسیقی
-            music.currentTime = 0; 
-            music.play().catch(error => {
-                console.warn("پخش خودکار موسیقی مسدود شد. لطفاً روی صفحه کلیک کنید تا بازی شروع شود.", error);
-                // اگر پخش خودکار مسدود شد، نیاز به کلیک کاربر برای شروع است.
-                scrollArea.addEventListener('click', function startMusicClick() {
-                    if (isGameRunning && music.paused) {
-                        music.play();
-                        console.log("موسیقی با کلیک کاربر شروع شد.");
-                        scrollArea.removeEventListener('click', startMusicClick, true);
-                    }
-                }, true);
-            });
-            
-            requestAnimationFrame(gameLoop);
-        }
-        
-        function handleTileClick(event) {
-            if (!isGameRunning) return;
-
-            const clickedElement = event.target;
-            
-            // 1. کلیک روی کاشی سفید یا ناحیه خالی (خطا)
-            if (clickedElement.id === 'scroll-area' || (clickedElement.classList.contains('tile') && !clickedElement.classList.contains('black-tile'))) {
-                console.log("کلیک اشتباه روی کاشی سفید!");
-                endGame(); 
-                return;
-            }
-            
-            // 2. کلیک روی کاشی سیاه (موفقیت)
-            if (clickedElement.classList.contains('black-tile')) {
-                
-                // افزایش امتیاز و تنظیم سرعت (بر اساس کلیک موفق)
-                score++; 
-                scoreDisplay.textContent = `امتیاز: ${score}`;
-                updateSpeed();
-
-                // حذف نوار موفقیت آمیز و تولید نوار جدید برای ادامه
-                const strip = clickedElement.closest('.tile-strip');
-                if (strip) {
-                    strip.remove(); 
-                    
-                    // تولید یک نوار جدید در بالا برای جبران نوار حذف شده و ادامه اسکرول
-                    addNewStrip(); 
-                }
-            }
-        }
-
-        // اجرای بازی پس از بارگذاری کامل صفحه (شروع اولیه)
-        window.onload = () => {
-            startGame(); 
-        };
-
-    </script>
+// ▶ شروع خودکار در لود اولیه
+startGame();
+</script>
 </body>
 </html>
