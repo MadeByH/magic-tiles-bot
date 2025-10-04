@@ -3,38 +3,37 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🎹 Magic Tiles Dream Mode</title>
+<title>Magic Tiles Infinity</title>
 <style>
 body {
+    margin: 0;
+    padding: 0;
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 100vh;
-    margin: 0;
-    background: linear-gradient(120deg, #000428, #004e92);
-    font-family: "B Nazanin", Tahoma, sans-serif;
+    height: 100vh;
+    font-family: 'B Nazanin', Tahoma, sans-serif;
     user-select: none;
-    transition: background 2s ease-in-out;
+    background: linear-gradient(120deg,#000428,#004e92);
+    transition: background 1s;
 }
 #game-container {
     width: 320px;
     height: 500px;
-    background-color: rgba(0, 0, 0, 0.9);
-    border-radius: 14px;
+    background-color: #111;
+    border-radius: 10px;
     overflow: hidden;
     position: relative;
-    box-shadow: 0 0 50px rgba(0, 255, 100, 0.4);
-    backdrop-filter: blur(6px);
+    box-shadow: 0 0 30px rgba(0,0,0,0.5);
 }
 #score-display {
     position: absolute;
     top: 10px;
     width: 100%;
     text-align: center;
-    color: #fff;
+    color: white;
     font-size: 1.8em;
     z-index: 10;
-    text-shadow: 0 0 10px #00e676;
 }
 #game-area {
     width: 100%;
@@ -45,60 +44,41 @@ body {
     position: absolute;
     width: 25%;
     height: 125px;
-    background: linear-gradient(180deg, #00ff80, #007744);
-    border-radius: 0 0 8px 8px;
-    box-shadow: inset 0 -6px 0 rgba(0, 0, 0, 0.3);
+    background-color: #222;
     cursor: pointer;
+    border-radius: 0 0 5px 5px;
+    box-shadow: inset 0 -5px 0 #000;
     transition: background-color 0.05s, transform 0.1s;
 }
 .tile.hit {
-    background: linear-gradient(180deg, #FFD54F, #FFA000);
+    background-color: #4CAF50;
     transform: scale(1.05);
 }
 .tile.missed {
-    background: linear-gradient(180deg, #E53935, #B71C1C);
+    background-color: #F44336;
 }
-#game-over-screen, #start-screen {
+#game-over-screen {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.85);
-    display: none;
+    top:0; left:0;
+    width:100%; height:100%;
+    background: rgba(0,0,0,0.8);
+    display:none;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    color: white;
-    text-align: center;
-    backdrop-filter: blur(4px);
+    color:white;
+    text-align:center;
 }
-button {
-    background-color: #00e676;
-    border: none;
-    color: white;
+#game-over-screen button {
+    padding: 10px 20px;
     font-size: 1.2em;
-    border-radius: 8px;
-    padding: 10px 25px;
     cursor: pointer;
-    transition: background-color 0.3s, transform 0.2s;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
 }
-button:hover {
-    background-color: #00c853;
-    transform: scale(1.05);
-}
-#speed-up {
-    position: absolute;
-    top: 40%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    color: #FFD700;
-    font-size: 2em;
-    font-weight: bold;
-    opacity: 0;
-    transition: opacity 0.8s ease-out;
-    text-shadow: 0 0 15px #FFD700;
-}
+#game-over-screen button:hover {background-color:#388E3C;}
 </style>
 </head>
 <body>
@@ -106,15 +86,8 @@ button:hover {
 <div id="game-container">
     <div id="score-display">امتیاز: 0</div>
     <div id="game-area"></div>
-    <div id="speed-up">🌌 مرحله سرعت! ⚡</div>
-
-    <div id="start-screen" style="display: flex;">
-        <h1>🎹 Magic Tiles Dream Mode</h1>
-        <button id="start-button">شروع بازی 🎵</button>
-    </div>
-
     <div id="game-over-screen">
-        <h1>🎮 بازی تمام شد</h1>
+        <h1>بازی تمام شد!</h1>
         <p>امتیاز نهایی: <span id="final-score">0</span></p>
         <button onclick="startGame()">شروع مجدد</button>
     </div>
@@ -123,141 +96,111 @@ button:hover {
 <audio id="bg-music" preload="auto"></audio>
 
 <script>
-// 🎵 لیست موزیک‌ها
 const MUSIC_LINKS = [
-    "https://www.bensound.com/bensound-music/bensound-tomorrow.mp3"
+"https://www.bensound.com/bensound-music/bensound-slowmotion.mp3",
+"https://www.bensound.com/bensound-music/bensound-tomorrow.mp3",
+"https://www.bensound.com/bensound-music/bensound-tenderness.mp3",
+"https://www.bensound.com/bensound-music/bensound-sweet.mp3",
+"https://www.bensound.com/bensound-music/bensound-dreams.mp3",
+"https://www.bensound.com/bensound-music/bensound-love.mp3",
+"https://www.bensound.com/bensound-music/bensound-onceagain.mp3",
+"https://www.bensound.com/bensound-music/bensound-creativeminds.mp3"
 ];
 
 const gameArea = document.getElementById("game-area");
 const scoreDisplay = document.getElementById("score-display");
-const startScreen = document.getElementById("start-screen");
 const gameOverScreen = document.getElementById("game-over-screen");
 const finalScore = document.getElementById("final-score");
 const audio = document.getElementById("bg-music");
-const speedUpText = document.getElementById("speed-up");
-const startButton = document.getElementById("start-button");
 
 let score = 0;
 let isGameOver = false;
-let gameLoopInterval;
-let tileMakerInterval;
 let tileFallSpeed = 3;
 let tileRate = 600;
-let hardMode = false;
+let currentSong = "";
+let tiles = [];
 
-// 🎮 شروع بازی
+function randomGradient() {
+    const colors = [
+        ["#000428","#004e92"],["#4b0082","#000000"],
+        ["#1e3c72","#2a5298"],["#0f2027","#203a43","#2c5364"],
+        ["#141E30","#243B55"]
+    ];
+    const c = colors[Math.floor(Math.random()*colors.length)];
+    return `linear-gradient(120deg, ${c.join(",")})`;
+}
+
 function startGame() {
     clearInterval(gameLoopInterval);
     clearInterval(tileMakerInterval);
     gameArea.innerHTML = "";
-    score = 0;
-    isGameOver = false;
-    hardMode = false;
-    tileFallSpeed = 3;
-    tileRate = 600;
+    score = 0; tileFallSpeed=3; tileRate=600; isGameOver=false;
+    tiles=[]; scoreDisplay.textContent="امتیاز: 0";
+    gameOverScreen.style.display="none";
+    document.body.style.background=randomGradient();
 
-    scoreDisplay.textContent = "امتیاز: 0";
-    gameOverScreen.style.display = "none";
-    startScreen.style.display = "none";
-
-    playMusicAndStart();
-}
-
-// 🎵 پخش موزیک و ساخت کاشی‌ها
-function playMusicAndStart() {
-    const musicSrc = MUSIC_LINKS[0];
-    audio.src = musicSrc;
-    audio.playbackRate = 1.0;
+    // انتخاب رندوم آهنگ
+    currentSong = MUSIC_LINKS[Math.floor(Math.random()*MUSIC_LINKS.length)];
+    audio.src = currentSong;
+    audio.playbackRate = 1;
     audio.play();
 
     tileMakerInterval = setInterval(createTile, tileRate);
+    gameLoopInterval = setInterval(gameLoop,1000/60);
 
     audio.onended = () => {
-        if (!hardMode) {
-            activateHardMode();
-        } else {
-            endGame();
-        }
+        tileFallSpeed += 1;
+        audio.playbackRate += 0.1;
+        audio.play();
     };
-
-    gameLoopInterval = setInterval(gameLoop, 1000 / 60);
 }
 
-// 💥 فعال‌سازی حالت سرعت (Dream Mode)
-function activateHardMode() {
-    hardMode = true;
-    tileFallSpeed *= 2;
-    tileRate /= 2;
-
-    clearInterval(tileMakerInterval);
-    tileMakerInterval = setInterval(createTile, tileRate);
-
-    // 🌌 افکت بصری و تغییر پس‌زمینه
-    document.body.style.background = "linear-gradient(120deg, #4b0082, #000000, #1e90ff)";
-    document.body.style.boxShadow = "0 0 80px rgba(255,255,255,0.3)";
-    speedUpText.style.opacity = 1;
-    setTimeout(() => (speedUpText.style.opacity = 0), 1500);
-
-    // 🎵 پخش همان موزیک با سرعت دوبرابر
-    const musicSrc = MUSIC_LINKS[0];
-    audio.src = musicSrc;
-    audio.playbackRate = 1.8;
-    audio.play();
-
-    audio.onended = () => endGame();
-}
-
-// 🎵 ایجاد کاشی
 function createTile() {
-    if (isGameOver) return;
+    if(isGameOver) return;
     const tile = document.createElement("div");
     tile.classList.add("tile");
-    const column = Math.floor(Math.random() * 4);
-    tile.style.left = `${column * 25}%`;
-    tile.style.top = `-125px`;
+    const col = Math.floor(Math.random()*4);
+    tile.style.left=`${col*25}%`;
+    tile.style.top="-125px";
 
     tile.onclick = () => {
-        if (isGameOver) return;
+        if(isGameOver) return;
         tile.classList.add("hit");
         score++;
-        scoreDisplay.textContent = `امتیاز: ${score}`;
-        tile.onclick = null;
-        setTimeout(() => tile.remove(), 100);
+        scoreDisplay.textContent=`امتیاز: ${score}`;
+        tile.onclick=null;
+        setTimeout(()=>tile.remove(),100);
     };
 
+    tiles.push(tile);
     gameArea.appendChild(tile);
 }
 
-// 🔄 حرکت کاشی‌ها
 function gameLoop() {
-    if (isGameOver) return;
-
-    const tiles = document.querySelectorAll(".tile");
-    tiles.forEach(tile => {
-        const currentY = parseFloat(tile.style.top || 0);
-        const newY = currentY + tileFallSpeed;
-        tile.style.top = `${newY}px`;
-
-        if (newY > gameArea.clientHeight) {
-            endGame(tile);
+    if(isGameOver) return;
+    for(let i=tiles.length-1;i>=0;i--){
+        const t = tiles[i];
+        const y = parseFloat(t.style.top||0)+tileFallSpeed;
+        t.style.top=`${y}px`;
+        if(y>gameArea.clientHeight){
+            endGame(t);
         }
-    });
+    }
 }
 
-// ❌ پایان بازی
-function endGame(tile) {
-    if (isGameOver) return;
-    isGameOver = true;
+function endGame(tile){
+    if(isGameOver) return;
+    isGameOver=true;
     clearInterval(gameLoopInterval);
     clearInterval(tileMakerInterval);
     audio.pause();
-    if (tile) tile.classList.add("missed");
-    finalScore.textContent = score;
-    gameOverScreen.style.display = "flex";
+    if(tile) tile.classList.add("missed");
+    finalScore.textContent=score;
+    gameOverScreen.style.display="flex";
 }
 
-// 🎬 دکمه شروع
-startButton.onclick = () => startGame();
+let gameLoopInterval, tileMakerInterval;
+startGame();
 </script>
 </body>
 </html>
