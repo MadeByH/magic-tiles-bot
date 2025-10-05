@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🎵 Magic Tiles Infinity</title>
+<title>Magic Tiles Infinity</title>
 <style>
 body {
     margin: 0;
@@ -12,27 +12,31 @@ body {
     justify-content: center;
     align-items: center;
     height: 100vh;
-    background: linear-gradient(120deg,#141E30,#243B55);
-    transition: background 1s;
+    font-family: 'B Nazanin', Tahoma, sans-serif;
     user-select: none;
-    font-family: 'B Nazanin', Tahoma;
+    background: linear-gradient(120deg,#000428,#004e92);
+    animation: bgmove 10s infinite alternate;
+}
+@keyframes bgmove {
+    0% {background: linear-gradient(120deg,#000428,#004e92);}
+    100% {background: linear-gradient(120deg,#004e92,#000428);}
 }
 #game-container {
     width: 320px;
     height: 500px;
-    background-color: #000;
+    background-color: #111;
     border-radius: 10px;
     overflow: hidden;
     position: relative;
-    box-shadow: 0 0 30px rgba(0,0,0,0.7);
+    box-shadow: 0 0 30px rgba(0,0,0,0.5);
 }
 #score-display {
     position: absolute;
-    top: 8px;
+    top: 10px;
     width: 100%;
     text-align: center;
     color: white;
-    font-size: 1.6em;
+    font-size: 1.8em;
     z-index: 10;
 }
 #game-area {
@@ -44,47 +48,49 @@ body {
     position: absolute;
     width: 25%;
     height: 125px;
-    background-color: #111;
-    border: 1px solid #333;
-    box-shadow: inset 0 -5px 0 #000;
+    background-color: #1e88e5;
     cursor: pointer;
-}
-.black-tile {
-    background-color: #000;
+    border-radius: 0 0 10px 10px;
+    box-shadow: 0 0 10px rgba(0,150,255,0.6);
+    transition: background-color 0.1s, transform 0.1s;
 }
 .tile.hit {
-    background-color: #4CAF50 !important;
+    background-color: #4CAF50;
+    transform: scale(1.1);
+    box-shadow: 0 0 15px #4CAF50;
 }
 .tile.missed {
-    background-color: #F44336 !important;
+    background-color: #F44336;
+    box-shadow: 0 0 20px #F44336;
 }
 #game-over-screen {
     position: absolute;
-    top:0;left:0;
-    width:100%;height:100%;
+    top:0; left:0;
+    width:100%; height:100%;
     background: rgba(0,0,0,0.85);
     display:none;
-    flex-direction:column;
-    justify-content:center;
-    align-items:center;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
     color:white;
     text-align:center;
 }
 #game-over-screen button {
-    background:#4CAF50;
-    border:none;
-    padding:10px 20px;
-    color:white;
-    font-size:1.1em;
-    border-radius:5px;
-    cursor:pointer;
+    padding: 10px 20px;
+    font-size: 1.2em;
+    cursor: pointer;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
 }
 #game-over-screen button:hover {
-    background:#388E3C;
+    background-color:#388E3C;
 }
 </style>
 </head>
 <body>
+
 <div id="game-container">
     <div id="score-display">امتیاز: 0</div>
     <div id="game-area"></div>
@@ -94,18 +100,19 @@ body {
         <button onclick="startGame()">شروع مجدد</button>
     </div>
 </div>
+
 <audio id="bg-music" preload="auto"></audio>
 
 <script>
 const MUSIC_LINKS = [
-"https://www.bensound.com/bensound-music/bensound-slowmotion.mp3",
-"https://www.bensound.com/bensound-music/bensound-tomorrow.mp3",
-"https://www.bensound.com/bensound-music/bensound-tenderness.mp3",
-"https://www.bensound.com/bensound-music/bensound-sweet.mp3",
-"https://www.bensound.com/bensound-music/bensound-dreams.mp3",
-"https://www.bensound.com/bensound-music/bensound-love.mp3",
-"https://www.bensound.com/bensound-music/bensound-onceagain.mp3",
-"https://www.bensound.com/bensound-music/bensound-creativeminds.mp3"
+    "https://www.bensound.com/bensound-music/bensound-slowmotion.mp3",
+    "https://www.bensound.com/bensound-music/bensound-tomorrow.mp3",
+    "https://www.bensound.com/bensound-music/bensound-tenderness.mp3",
+    "https://www.bensound.com/bensound-music/bensound-sweet.mp3",
+    "https://www.bensound.com/bensound-music/bensound-dreams.mp3",
+    "https://www.bensound.com/bensound-music/bensound-love.mp3",
+    "https://www.bensound.com/bensound-music/bensound-onceagain.mp3",
+    "https://www.bensound.com/bensound-music/bensound-creativeminds.mp3"
 ];
 
 const gameArea = document.getElementById("game-area");
@@ -114,96 +121,100 @@ const gameOverScreen = document.getElementById("game-over-screen");
 const finalScore = document.getElementById("final-score");
 const audio = document.getElementById("bg-music");
 
-let tiles = [];
 let score = 0;
 let isGameOver = false;
-let speed = 2.5;
-let tileInterval = 700;
-let lastTileY = -125;
+let tileFallSpeed = 3;
 let currentSong = "";
+let tiles = [];
+let gameLoopInterval;
 
 function startGame() {
     clearInterval(gameLoopInterval);
-    clearInterval(tileMakerInterval);
     gameArea.innerHTML = "";
-    tiles = [];
     score = 0;
-    speed = 2.5;
-    tileInterval = 700;
-    lastTileY = -125;
+    tileFallSpeed = 3;
     isGameOver = false;
+    tiles = [];
     scoreDisplay.textContent = "امتیاز: 0";
     gameOverScreen.style.display = "none";
 
-    // انتخاب تصادفی آهنگ
+    // آهنگ تصادفی
     currentSong = MUSIC_LINKS[Math.floor(Math.random() * MUSIC_LINKS.length)];
     audio.src = currentSong;
     audio.playbackRate = 1;
     audio.play();
 
-    tileMakerInterval = setInterval(createTileRow, tileInterval);
-    gameLoopInterval = setInterval(updateGame, 1000 / 60);
+    createTileWave();
+    gameLoopInterval = setInterval(gameLoop, 1000 / 60);
 
-    // وقتی آهنگ تموم بشه، سرعت زیاد شه و دوباره پخش بشه
     audio.onended = () => {
-        speed += 0.8;
-        audio.playbackRate += 0.1;
+        tileFallSpeed *= 1.5;
+        audio.playbackRate += 0.15;
+        audio.currentTime = 0;
         audio.play();
     };
 }
 
-function createTileRow() {
+function createTileWave() {
     if (isGameOver) return;
-    const row = document.createElement("div");
-    const col = Math.floor(Math.random() * 4);
-    const tile = document.createElement("div");
-    tile.classList.add("tile", "black-tile");
-    tile.style.left = `${col * 25}%`;
-    tile.style.top = `${lastTileY}px`;
 
-    tile.onclick = () => {
-        if (isGameOver) return;
-        tile.classList.remove("black-tile");
-        tile.classList.add("hit");
-        tile.onclick = null;
-        score++;
-        scoreDisplay.textContent = `امتیاز: ${score}`;
-        // حذف از آرایه وقتی زده شد
-        tiles = tiles.filter(t => t !== tile);
-        setTimeout(() => tile.remove(), 100);
-        // افزایش تدریجی سرعت
-        if (score % 15 === 0) speed += 0.3;
-    };
+    // در هر موج بین 1 تا 3 کاشی
+    const tileCount = Math.random() < 0.7 ? 1 : Math.floor(Math.random() * 3) + 1;
+    const usedCols = [];
 
-    gameArea.appendChild(tile);
-    tiles.push(tile);
-    lastTileY -= 125;
+    for (let i = 0; i < tileCount; i++) {
+        const tile = document.createElement("div");
+        tile.classList.add("tile");
+
+        let col;
+        do { col = Math.floor(Math.random() * 4); } while (usedCols.includes(col));
+        usedCols.push(col);
+
+        tile.style.left = `${col * 25}%`;
+        tile.style.top = "-125px";
+
+        tile.onclick = () => {
+            if (isGameOver) return;
+            tile.classList.add("hit");
+            score++;
+            scoreDisplay.textContent = `امتیاز: ${score}`;
+            tile.onclick = null;
+            setTimeout(() => tile.remove(), 100);
+        };
+
+        tiles.push(tile);
+        gameArea.appendChild(tile);
+    }
+
+    // ریتم پویا
+    let nextDelay = Math.random() * 400 + 250; // 250 تا 650ms
+    nextDelay /= audio.playbackRate; // هماهنگ با سرعت آهنگ
+    setTimeout(createTileWave, nextDelay);
 }
 
-function updateGame() {
+function gameLoop() {
     if (isGameOver) return;
-    tiles.forEach(tile => {
-        const y = parseFloat(tile.style.top) + speed;
-        tile.style.top = `${y}px`;
+    for (let i = tiles.length - 1; i >= 0; i--) {
+        const t = tiles[i];
+        const y = parseFloat(t.style.top || 0) + tileFallSpeed;
+        t.style.top = `${y}px`;
+
         if (y > gameArea.clientHeight) {
-            endGame(tile);
+            endGame(t);
         }
-    });
-    tiles = tiles.filter(tile => parseFloat(tile.style.top) <= gameArea.clientHeight);
+    }
 }
 
 function endGame(tile) {
     if (isGameOver) return;
     isGameOver = true;
     clearInterval(gameLoopInterval);
-    clearInterval(tileMakerInterval);
     audio.pause();
     if (tile) tile.classList.add("missed");
     finalScore.textContent = score;
     gameOverScreen.style.display = "flex";
 }
 
-let gameLoopInterval, tileMakerInterval;
 startGame();
 </script>
 </body>
