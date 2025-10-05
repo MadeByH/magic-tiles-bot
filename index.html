@@ -3,192 +3,201 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Magic Tiles 3 - ساده</title>
+<title>🎵 Magic Tiles ساده</title>
 <style>
 body {
-    margin: 0;
-    overflow: hidden;
-    background: linear-gradient(120deg,#1a2a6c,#b21f1f,#fdbb2d);
-    background-size: 400% 400%;
-    animation: bgmove 10s infinite alternate;
-    font-family: sans-serif;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
+  margin: 0;
+  overflow: hidden;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+  background-size: 400% 400%;
+  animation: bg 10s ease infinite;
+  font-family: sans-serif;
 }
-@keyframes bgmove {
-    0% {background-position: 0% 50%;}
-    100% {background-position: 100% 50%;}
+@keyframes bg {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 #game {
-    width: 320px;
-    height: 480px;
-    background: #000;
-    overflow: hidden;
-    position: relative;
-    border-radius: 10px;
-    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+  width: 320px;
+  height: 500px;
+  background: #000;
+  position: relative;
+  overflow: hidden;
+  border-radius: 10px;
+  box-shadow: 0 0 25px rgba(0,0,0,0.5);
 }
 .tile {
-    position: absolute;
-    width: 25%;
-    height: 120px;
-    background: #111;
-    border: 1px solid #222;
-    cursor: pointer;
-    transition: background 0.1s;
+  position: absolute;
+  width: 25%;
+  height: 120px;
+  background: #000;
+  border: 1px solid #111;
+  cursor: pointer;
+  transition: background 0.1s, transform 0.1s;
 }
-.tile.black { background: #000; }
-.tile.hit { background: #4CAF50; }
-.tile.missed { background: #F44336; }
+.tile.hit {
+  background: #4caf50;
+  transform: scale(1.05);
+}
+.tile.missed {
+  background: #f44336;
+}
 #score {
-    position: absolute;
-    top: 10px;
-    left: 0;
-    width: 100%;
-    color: white;
-    text-align: center;
-    font-size: 20px;
-    z-index: 10;
+  position: absolute;
+  top: 10px;
+  width: 100%;
+  color: white;
+  text-align: center;
+  font-size: 20px;
+  z-index: 10;
 }
 #gameover {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.9);
-    color: white;
-    display: none;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.85);
+  color: white;
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 }
 button {
-    margin-top: 15px;
-    padding: 10px 20px;
-    font-size: 1em;
-    border: none;
-    background: #4CAF50;
-    color: white;
-    border-radius: 5px;
-    cursor: pointer;
+  margin-top: 10px;
+  background: #4caf50;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 1em;
+  cursor: pointer;
 }
-button:hover { background: #388E3C; }
+button:hover {
+  background: #388e3c;
+}
 </style>
 </head>
 <body>
 <div id="game">
-    <div id="score">امتیاز: 0</div>
-    <div id="gameover">
-        <h2>باختی 😢</h2>
-        <p>امتیاز نهایی: <span id="final"></span></p>
-        <button onclick="startGame()">شروع مجدد</button>
-    </div>
+  <div id="score">امتیاز: 0</div>
+  <div id="gameover">
+    <h2>باختی 😢</h2>
+    <p>امتیاز نهایی: <span id="finalScore"></span></p>
+    <button onclick="startGame()">شروع مجدد</button>
+  </div>
 </div>
 
 <audio id="music" preload="auto"></audio>
 
 <script>
 const MUSIC_LINKS = [
-    "https://www.bensound.com/bensound-music/bensound-slowmotion.mp3",
-    "https://www.bensound.com/bensound-music/bensound-tomorrow.mp3",
-    "https://www.bensound.com/bensound-music/bensound-dreams.mp3"
+  "https://www.bensound.com/bensound-music/bensound-slowmotion.mp3",
+  "https://www.bensound.com/bensound-music/bensound-tomorrow.mp3",
+  "https://www.bensound.com/bensound-music/bensound-dreams.mp3"
 ];
 
 const game = document.getElementById("game");
 const scoreEl = document.getElementById("score");
 const gameover = document.getElementById("gameover");
-const finalScoreEl = document.getElementById("final");
+const finalScoreEl = document.getElementById("finalScore");
 const music = document.getElementById("music");
 
 let tiles = [];
-let speed = 2;
 let score = 0;
+let speed = 2;
 let playing = false;
-let gameLoop;
 let songRate = 1;
+let spawnInterval, gameLoop;
 
 function startGame() {
-    clearInterval(gameLoop);
-    tiles = [];
-    game.innerHTML = `<div id="score">امتیاز: 0</div><div id="gameover"><h2>باختی 😢</h2><p>امتیاز نهایی: <span id="final"></span></p><button onclick="startGame()">شروع مجدد</button></div>`;
-    scoreEl.textContent = "امتیاز: 0";
-    score = 0;
-    speed = 2;
-    playing = true;
-    songRate = 1;
-    gameover.style.display = "none";
+  clearInterval(spawnInterval);
+  clearInterval(gameLoop);
+  tiles.forEach(t => t.remove());
+  tiles = [];
+  score = 0;
+  speed = 2;
+  songRate = 1;
+  scoreEl.textContent = "امتیاز: 0";
+  gameover.style.display = "none";
+  playing = true;
 
-    // انتخاب آهنگ تصادفی
-    const song = MUSIC_LINKS[Math.floor(Math.random()*MUSIC_LINKS.length)];
-    music.src = song;
+  // آهنگ تصادفی
+  const song = MUSIC_LINKS[Math.floor(Math.random() * MUSIC_LINKS.length)];
+  music.src = song;
+  music.playbackRate = songRate;
+  music.play();
+
+  // وقتی آهنگ تموم شد، دوباره پخش کن و سرعت رو بیشتر کن
+  music.onended = () => {
+    speed *= 1.3;
+    songRate += 0.1;
     music.playbackRate = songRate;
+    music.currentTime = 0;
     music.play();
+  };
 
-    music.onended = () => {
-        speed *= 1.5;
-        songRate += 0.2;
-        music.playbackRate = songRate;
-        music.currentTime = 0;
-        music.play();
-    };
-
-    spawnTile();
-    gameLoop = setInterval(update, 16);
+  spawnInterval = setInterval(spawnTile, 700);
+  gameLoop = setInterval(update, 16);
 }
 
 function spawnTile() {
-    if(!playing) return;
-    const col = Math.floor(Math.random()*4);
-    const tile = document.createElement("div");
-    tile.classList.add("tile","black");
-    tile.style.left = (col*25)+"%";
-    tile.style.top = "-120px";
+  if (!playing) return;
+  const col = Math.floor(Math.random() * 4);
+  const lastTile = tiles[tiles.length - 1];
+  // فاصله بین کاشی‌ها
+  if (lastTile && parseFloat(lastTile.style.top) < 0) return;
 
-    tile.onclick = () => {
-        if(!playing) return;
-        tile.classList.remove("black");
-        tile.classList.add("hit");
-        score++;
-        scoreEl.textContent = "امتیاز: "+score;
-        tile.onclick = null;
-        setTimeout(()=>tile.remove(),100);
-    };
+  const tile = document.createElement("div");
+  tile.classList.add("tile");
+  tile.style.left = (col * 25) + "%";
+  tile.style.top = "-120px";
 
-    game.appendChild(tile);
-    tiles.push(tile);
+  tile.onclick = () => {
+    if (!playing) return;
+    tile.classList.add("hit");
+    tile.onclick = null;
+    score++;
+    scoreEl.textContent = "امتیاز: " + score;
+    setTimeout(() => tile.remove(), 100);
+  };
 
-    // هر 600 تا 900 میلی‌ثانیه کاشی جدید
-    const delay = Math.random()*300+600;
-    setTimeout(spawnTile, delay / songRate);
+  game.appendChild(tile);
+  tiles.push(tile);
 }
 
 function update() {
-    if(!playing) return;
-    for(let i=tiles.length-1;i>=0;i--){
-        const t = tiles[i];
-        const y = parseFloat(t.style.top) + speed;
-        t.style.top = y+"px";
-        if(y > 480){
-            if(t.classList.contains("black")) {
-                endGame();
-                return;
-            } else {
-                t.remove();
-                tiles.splice(i,1);
-            }
-        }
+  if (!playing) return;
+  for (let i = tiles.length - 1; i >= 0; i--) {
+    const t = tiles[i];
+    const y = parseFloat(t.style.top) + speed;
+    t.style.top = y + "px";
+    if (y > game.clientHeight) {
+      if (!t.classList.contains("hit")) {
+        t.classList.add("missed");
+        endGame();
+        return;
+      } else {
+        t.remove();
+        tiles.splice(i, 1);
+      }
     }
+  }
 }
 
-function endGame(){
-    playing = false;
-    clearInterval(gameLoop);
-    music.pause();
-    gameover.style.display = "flex";
-    finalScoreEl.textContent = score;
+function endGame() {
+  playing = false;
+  clearInterval(spawnInterval);
+  clearInterval(gameLoop);
+  music.pause();
+  finalScoreEl.textContent = score;
+  gameover.style.display = "flex";
 }
 startGame();
 </script>
