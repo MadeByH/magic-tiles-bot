@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Magic Tiles Infinity</title>
+<title>🎵 Magic Tiles Infinity</title>
 <style>
 body {
     margin: 0;
@@ -12,27 +12,27 @@ body {
     justify-content: center;
     align-items: center;
     height: 100vh;
-    font-family: 'B Nazanin', Tahoma, sans-serif;
-    user-select: none;
-    background: linear-gradient(120deg,#000428,#004e92);
+    background: linear-gradient(120deg,#141E30,#243B55);
     transition: background 1s;
+    user-select: none;
+    font-family: 'B Nazanin', Tahoma;
 }
 #game-container {
     width: 320px;
     height: 500px;
-    background-color: #111;
+    background-color: #000;
     border-radius: 10px;
     overflow: hidden;
     position: relative;
-    box-shadow: 0 0 30px rgba(0,0,0,0.5);
+    box-shadow: 0 0 30px rgba(0,0,0,0.7);
 }
 #score-display {
     position: absolute;
-    top: 10px;
+    top: 8px;
     width: 100%;
     text-align: center;
     color: white;
-    font-size: 1.8em;
+    font-size: 1.6em;
     z-index: 10;
 }
 #game-area {
@@ -44,45 +44,47 @@ body {
     position: absolute;
     width: 25%;
     height: 125px;
-    background-color: #222;
-    cursor: pointer;
-    border-radius: 0 0 5px 5px;
+    background-color: #111;
+    border: 1px solid #333;
     box-shadow: inset 0 -5px 0 #000;
-    transition: background-color 0.05s, transform 0.1s;
+    cursor: pointer;
+}
+.black-tile {
+    background-color: #000;
 }
 .tile.hit {
-    background-color: #4CAF50;
-    transform: scale(1.05);
+    background-color: #4CAF50 !important;
 }
 .tile.missed {
-    background-color: #F44336;
+    background-color: #F44336 !important;
 }
 #game-over-screen {
     position: absolute;
-    top:0; left:0;
-    width:100%; height:100%;
-    background: rgba(0,0,0,0.8);
+    top:0;left:0;
+    width:100%;height:100%;
+    background: rgba(0,0,0,0.85);
     display:none;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
     color:white;
     text-align:center;
 }
 #game-over-screen button {
-    padding: 10px 20px;
-    font-size: 1.2em;
-    cursor: pointer;
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 5px;
+    background:#4CAF50;
+    border:none;
+    padding:10px 20px;
+    color:white;
+    font-size:1.1em;
+    border-radius:5px;
+    cursor:pointer;
 }
-#game-over-screen button:hover {background-color:#388E3C;}
+#game-over-screen button:hover {
+    background:#388E3C;
+}
 </style>
 </head>
 <body>
-
 <div id="game-container">
     <div id="score-display">امتیاز: 0</div>
     <div id="game-area"></div>
@@ -92,7 +94,6 @@ body {
         <button onclick="startGame()">شروع مجدد</button>
     </div>
 </div>
-
 <audio id="bg-music" preload="auto"></audio>
 
 <script>
@@ -113,90 +114,93 @@ const gameOverScreen = document.getElementById("game-over-screen");
 const finalScore = document.getElementById("final-score");
 const audio = document.getElementById("bg-music");
 
+let tiles = [];
 let score = 0;
 let isGameOver = false;
-let tileFallSpeed = 3;
-let tileRate = 600;
+let speed = 2.5;
+let tileInterval = 700;
+let lastTileY = -125;
 let currentSong = "";
-let tiles = [];
-
-function randomGradient() {
-    const colors = [
-        ["#000428","#004e92"],["#4b0082","#000000"],
-        ["#1e3c72","#2a5298"],["#0f2027","#203a43","#2c5364"],
-        ["#141E30","#243B55"]
-    ];
-    const c = colors[Math.floor(Math.random()*colors.length)];
-    return `linear-gradient(120deg, ${c.join(",")})`;
-}
 
 function startGame() {
     clearInterval(gameLoopInterval);
     clearInterval(tileMakerInterval);
     gameArea.innerHTML = "";
-    score = 0; tileFallSpeed=3; tileRate=600; isGameOver=false;
-    tiles=[]; scoreDisplay.textContent="امتیاز: 0";
-    gameOverScreen.style.display="none";
-    document.body.style.background=randomGradient();
+    tiles = [];
+    score = 0;
+    speed = 2.5;
+    tileInterval = 700;
+    lastTileY = -125;
+    isGameOver = false;
+    scoreDisplay.textContent = "امتیاز: 0";
+    gameOverScreen.style.display = "none";
 
-    // انتخاب رندوم آهنگ
-    currentSong = MUSIC_LINKS[Math.floor(Math.random()*MUSIC_LINKS.length)];
+    // انتخاب تصادفی آهنگ
+    currentSong = MUSIC_LINKS[Math.floor(Math.random() * MUSIC_LINKS.length)];
     audio.src = currentSong;
     audio.playbackRate = 1;
     audio.play();
 
-    tileMakerInterval = setInterval(createTile, tileRate);
-    gameLoopInterval = setInterval(gameLoop,1000/60);
+    tileMakerInterval = setInterval(createTileRow, tileInterval);
+    gameLoopInterval = setInterval(updateGame, 1000 / 60);
 
+    // وقتی آهنگ تموم بشه، سرعت زیاد شه و دوباره پخش بشه
     audio.onended = () => {
-        tileFallSpeed += 1;
+        speed += 0.8;
         audio.playbackRate += 0.1;
         audio.play();
     };
 }
 
-function createTile() {
-    if(isGameOver) return;
+function createTileRow() {
+    if (isGameOver) return;
+    const row = document.createElement("div");
+    const col = Math.floor(Math.random() * 4);
     const tile = document.createElement("div");
-    tile.classList.add("tile");
-    const col = Math.floor(Math.random()*4);
-    tile.style.left=`${col*25}%`;
-    tile.style.top="-125px";
+    tile.classList.add("tile", "black-tile");
+    tile.style.left = `${col * 25}%`;
+    tile.style.top = `${lastTileY}px`;
 
     tile.onclick = () => {
-        if(isGameOver) return;
+        if (isGameOver) return;
+        tile.classList.remove("black-tile");
         tile.classList.add("hit");
+        tile.onclick = null;
         score++;
-        scoreDisplay.textContent=`امتیاز: ${score}`;
-        tile.onclick=null;
-        setTimeout(()=>tile.remove(),100);
+        scoreDisplay.textContent = `امتیاز: ${score}`;
+        // حذف از آرایه وقتی زده شد
+        tiles = tiles.filter(t => t !== tile);
+        setTimeout(() => tile.remove(), 100);
+        // افزایش تدریجی سرعت
+        if (score % 15 === 0) speed += 0.3;
     };
 
-    tiles.push(tile);
     gameArea.appendChild(tile);
+    tiles.push(tile);
+    lastTileY -= 125;
 }
 
-function gameLoop() {
-    if(isGameOver) return;
-    for(let i=tiles.length-1;i>=0;i--){
-        const t = tiles[i];
-        const y = parseFloat(t.style.top||0)+tileFallSpeed;
-        t.style.top=`${y}px`;
-        if(y>gameArea.clientHeight){
-            endGame(t);
+function updateGame() {
+    if (isGameOver) return;
+    tiles.forEach(tile => {
+        const y = parseFloat(tile.style.top) + speed;
+        tile.style.top = `${y}px`;
+        if (y > gameArea.clientHeight) {
+            endGame(tile);
         }
-    }
+    });
+    tiles = tiles.filter(tile => parseFloat(tile.style.top) <= gameArea.clientHeight);
 }
 
-function endGame(tile){
-    if(isGameOver) return;
-    isGameOver=true;
+function endGame(tile) {
+    if (isGameOver) return;
+    isGameOver = true;
     clearInterval(gameLoopInterval);
     clearInterval(tileMakerInterval);
     audio.pause();
-    if(tile) tile.classList.add("missed");
-    finalScore.textContent=score;
-    gameOverScreen.style.display="flex";
+    if (tile) tile.classList.add("missed");
+    finalScore.textContent = score;
+    gameOverScreen.style.display = "flex";
 }
 
 let gameLoopInterval, tileMakerInterval;
