@@ -47,7 +47,7 @@ const gameover = document.getElementById("gameover");
 const finalScoreEl = document.getElementById("finalScore");
 const music = document.getElementById("music");
 
-let tiles=[], score=0, speed=2, songRate=1, playing=false;
+let tiles = [], score = 0, speed = 2, songRate = 1, playing = false;
 let spawnInterval, gameLoop;
 
 function startGame(){
@@ -70,27 +70,36 @@ function startGame(){
 
 function spawnTile(){
   if(!playing) return;
-  const typeRnd=Math.random();
-  let cols=[Math.floor(Math.random()*4)]; // default single
-  if(typeRnd>0.7){ // double
-    let c=cols[0]; c=(c<3)?c+1:c-1; cols.push(c);
+  
+  // انتخاب نوع کاشی
+  const rnd = Math.random();
+  let cols = [];
+  
+  if(rnd < 0.6){ // Single tile
+    cols = [Math.floor(Math.random()*4)];
+  } else if(rnd < 0.85){ // Double tile
+    const c = Math.floor(Math.random()*3);
+    cols = [c, c+1];
+  } else { // Long tile
+    cols = [Math.floor(Math.random()*4)];
   }
-  else if(typeRnd>0.9){ // long tile
-    cols=[Math.floor(Math.random()*4)]; // single but bigger
-  }
+
   cols.forEach(c=>{
-    const tile=document.createElement("div");
+    const tile = document.createElement("div");
     tile.classList.add("tile");
-    tile.style.left=(c*25)+"%";
-    tile.style.top="-120px";
-    if(typeRnd>0.9){ tile.style.height="240px"; } // long tile
-    tile.onclick=()=>{
+    tile.style.left = (c*25)+"%";
+    tile.style.top = "-120px";
+    if(rnd >= 0.85){ tile.style.height = "240px"; } // Long tile
+
+    tile.onclick = ()=>{
       if(!playing) return;
       tile.classList.add("hit"); tile.onclick=null;
       score++; scoreEl.textContent="امتیاز: "+score;
       setTimeout(()=>tile.remove(),100);
-    };
-    game.appendChild(tile); tiles.push(tile);
+    }
+
+    game.appendChild(tile);
+    tiles.push(tile);
   });
 }
 
@@ -101,7 +110,9 @@ function update(){
     if(y>game.clientHeight){
       if(!t.classList.contains("hit")){
         t.classList.add("missed"); endGame(); return;
-      } else { t.remove(); tiles.splice(i,1); }
+      } else {
+        t.remove(); tiles.splice(i,1);
+      }
     }
   }
 }
